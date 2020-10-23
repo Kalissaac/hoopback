@@ -1,4 +1,4 @@
-module web
+module schwa.tech/hoopback
 
 go 1.15
 
