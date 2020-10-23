@@ -11,6 +11,8 @@ github.com/codegangsta/gin v0.0.0-20171026143024-cafe2ce98974/go.mod h1:UBYuwaH3
 github.com/gofiber/fiber v1.14.6 h1:QRUPvPmr8ijQuGo1MgupHBn8E+wW0IKqiOvIZPtV70o=
 github.com/gofiber/fiber/v2 v2.1.1 h1:2AAL5XUN1kXw8tt6p2xbZHZ9SLfSjl7pSgnIRGUkHjU=
 github.com/gofiber/fiber/v2 v2.1.1/go.mod h1:tpaJo8bDmDBffw1es3SugTtc6l7oC9EuVaAPe2vrNvE=
+github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
+github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/klauspost/compress v1.10.7 h1:7rix8v8GpI3ZBb0nSozFRgbtXKv+hOe+qfEpZqybrAg=
 github.com/klauspost/compress v1.10.7/go.mod h1:aoV0uJVorq1K+umq18yTdKaF57EivdYsUV+/s2qKfXs=
 github.com/klauspost/compress v1.11.1 h1:bPb7nMRdOZYDrpPMTA3EInUQrdgoBinqUuSwlGdKDdE=
