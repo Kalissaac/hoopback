@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"net/url"
 	"os"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/joho/godotenv"
@@ -26,11 +26,21 @@ var (
 		},
 	})
 	client *mongo.Client
+	fetch  = resty.New()
 )
 
 func setupMiddleware() {
 	app.Use(compress.New())
 	// app.Use(limiter.New())
+}
+
+// DiscordTokenResponse represents the OAuth token recieved from Discord
+type DiscordTokenResponse struct {
+	accessToken  string
+	expiresIn    string
+	refreshToken string
+	id           string
+	username     string
 }
 
 func setupAuth() {
@@ -42,27 +52,54 @@ func setupAuth() {
 			return c.Redirect("/restricted")
 		} else if c.Query("code") != "" {
 			// Authorization code from Discord found
-			data := url.Values{
-				"client_id":     {os.Getenv("CLIENT_ID")},
-				"client_secret": {os.Getenv("CLIENT_SECRET")},
-				"grant_type":    {"authorization_code"},
-				"redirect_uri":  {redirectURI},
-				"code":          {c.Query("code")},
-				"scope":         {"identify"},
-			}
 
-			resp, err := http.PostForm("https://discordapp.com/api/oauth2/token", data)
+			resp, err := fetch.R().
+				SetFormData(map[string]string{
+					"client_id":     os.Getenv("CLIENT_ID"),
+					"client_secret": os.Getenv("CLIENT_SECRET"),
+					"grant_type":    "authorization_code",
+					"redirect_uri":  redirectURI,
+					"code":          c.Query("code"),
+					"scope":         "identify",
+				}).
+				Post("https://discordapp.com/api/oauth2/token")
+
 			if err != nil {
 				panic(err)
 			}
 
-			var res map[string]interface{}
-			json.NewDecoder(resp.Body).Decode(&res)
-
-			accessToken, ok := res["access_token"].(string)
-			if ok == false {
-				panic("access_token casting failed!")
+			res := make(map[string]string)
+			err = json.Unmarshal(resp.Body(), &res)
+			if err != nil {
+				panic(err)
 			}
+
+			accessToken := res["access_token"]
+
+			expiresIn := res["expires_in"]
+
+			refreshToken := res["refresh_token"]
+
+			userInfo := DiscordTokenResponse{
+				accessToken:  accessToken,
+				expiresIn:    expiresIn,
+				refreshToken: refreshToken,
+			}
+
+			resp, err = fetch.R().
+				SetAuthToken(accessToken).
+				Get("https://discord.com/api/v8/users/@me")
+
+			res = make(map[string]string)
+			err = json.Unmarshal(resp.Body(), &res)
+			if err != nil {
+				panic(err)
+			}
+
+			userInfo.id = res["id"]
+			userInfo.username = res["username"]
+
+			initUser(&userInfo)
 
 			// Create cookie
 			cookie := new(fiber.Cookie)
@@ -70,13 +107,15 @@ func setupAuth() {
 			cookie.Value = accessToken
 			cookie.Expires = time.Now().Add(7 * 24 * time.Hour)
 
+			// Cookie value is `userID/refreshToken` encrypted, therefore it can persist through server restarts
+
 			// Set cookie
 			c.Cookie(cookie)
 
 			return c.Redirect("/restricted")
 		} else {
 			// If no auth cookie is found, and it's not a redirect from Discord, send them to login
-			return c.Redirect("https://discord.com/api/oauth2/authorize?client_id=768975292621783089&redirect_uri=" + url.QueryEscape(redirectURI) + "&response_type=code&scope=identify")
+			return c.Redirect("https://discord.com/api/oauth2/authorize?client_id=" + url.QueryEscape(os.Getenv("CLIENT_ID")) + "&redirect_uri=" + url.QueryEscape(redirectURI) + "&response_type=code&scope=identify")
 		}
 	})
 
@@ -91,19 +130,18 @@ func setupAuth() {
 
 // User object
 type User struct {
-	ID           string `json:"_id,omitempty"`
-	Title        string `json:"title"`
-	Body         string `json:"body"`
-	RefreshToken string `json:"refresh_token"`
+	ID                 string `json:"_id,omitempty"`
+	Username           string `json:"title"`
+	AccessToken        string `json:"access.token"`
+	AccessTokenExpires string `json:"access.expires"`
+	RefreshToken       string `json:"refresh_token"`
 }
 
-func _createUser(userID *string) {
+func _createUser(userInfo *DiscordTokenResponse) {
 	collection := client.Database("data").Collection("users")
 
 	user := User{
-		ID:    *userID,
-		Title: "bob",
-		Body:  "john",
+		ID: userInfo.id,
 	}
 
 	insertResult, err := collection.InsertOne(context.TODO(), user)
@@ -114,15 +152,15 @@ func _createUser(userID *string) {
 	fmt.Println("Inserted post with ID:", insertResult.InsertedID)
 }
 
-func initUser(userID *string) {
+func initUser(userInfo *DiscordTokenResponse) {
 	collection := client.Database("data").Collection("users")
 
 	var user User
 
-	err := collection.FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: userID}}).Decode(&user)
+	err := collection.FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: userInfo.id}}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			_createUser(userID)
+			_createUser(userInfo)
 			return
 		}
 		log.Fatal(err)

@@ -7,6 +7,7 @@ require (
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/codegangsta/envy v0.0.0-20141216192214-4b78388c8ce4 // indirect
 	github.com/codegangsta/gin v0.0.0-20171026143024-cafe2ce98974 // indirect
+	github.com/go-resty/resty/v2 v2.3.0
 	github.com/gofiber/fiber/v2 v2.1.1
 	github.com/joho/godotenv v1.3.0
 	github.com/klauspost/compress v1.11.1 // indirect
