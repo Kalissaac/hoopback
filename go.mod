@@ -1,4 +1,4 @@
-module schwa.tech/hoopback
+module hoopback.schwa.tech
 
 go 1.15
 
