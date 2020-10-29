@@ -1,4 +1,4 @@
-package hoopback
+package main
 
 import (
 	"context"
@@ -10,9 +10,15 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/helmet/v2"
+	"github.com/gofiber/session/v2"
+
 	"github.com/joho/godotenv"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,29 +31,64 @@ var (
 			return c.Status(500).SendString(err.Error())
 		},
 	})
+	sessions = session.New(session.Config{
+		Expiration: 7 * 24 * time.Hour,
+		Secure:     false, // TODO: change to true for production
+	})
 	client *mongo.Client
 	fetch  = resty.New()
 )
 
 func setupMiddleware() {
 	app.Use(compress.New())
+	app.Use(helmet.New())
 	// app.Use(limiter.New())
+	app.Use(recover.New())
 }
 
 // DiscordTokenResponse represents the OAuth token recieved from Discord
 type DiscordTokenResponse struct {
-	accessToken  string
-	expiresIn    string
-	refreshToken string
-	id           string
-	username     string
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        string `json:"scope"`
+}
+
+// DiscordUserResponse represents the user object recieved from Discord
+type DiscordUserResponse struct {
+	ID            string `json:"id"`
+	Username      string `json:"username"`
+	Discriminator string `json:"discriminator"`
+	Avatar        string `json:"avatar"`
+}
+
+// Webhook object
+type Webhook struct {
+	ID              string   `bson:"_id"`
+	Name            string   `bson:"name"`
+	Destination     string   `bson:"destination"`
+	Transformations []string `bson:"transformations"`
+}
+
+// User object
+type User struct {
+	ID                 string             `bson:"_id,omitempty"`
+	Username           string             `bson:"username"`
+	AccessToken        string             `bson:"access_token"`
+	AccessTokenExpires int64              `bson:"access_token_expires"`
+	RefreshToken       string             `bson:"refresh_token"`
+	Webhooks           map[string]Webhook `bson:"webhooks"`
 }
 
 func setupAuth() {
 	app.Get("/login", func(c *fiber.Ctx) error {
 		redirectURI := c.BaseURL() + "/login"
 
-		if c.Cookies("authorization") != "" {
+		store := sessions.Get(c)
+		defer store.Save()
+
+		if store.Get("user") != nil {
 			// Authorization cookie found, user is authenticated
 			return c.Redirect("/restricted")
 		} else if c.Query("code") != "" {
@@ -68,49 +109,22 @@ func setupAuth() {
 				panic(err)
 			}
 
-			res := make(map[string]string)
+			res := DiscordTokenResponse{}
+
 			err = json.Unmarshal(resp.Body(), &res)
 			if err != nil {
 				panic(err)
 			}
 
-			accessToken := res["access_token"]
-
-			expiresIn := res["expires_in"]
-
-			refreshToken := res["refresh_token"]
-
-			userInfo := DiscordTokenResponse{
-				accessToken:  accessToken,
-				expiresIn:    expiresIn,
-				refreshToken: refreshToken,
+			userInfo := User{
+				AccessToken:        res.AccessToken,
+				RefreshToken:       res.RefreshToken,
+				AccessTokenExpires: time.Now().Unix() + res.ExpiresIn,
 			}
-
-			resp, err = fetch.R().
-				SetAuthToken(accessToken).
-				Get("https://discord.com/api/v8/users/@me")
-
-			res = make(map[string]string)
-			err = json.Unmarshal(resp.Body(), &res)
-			if err != nil {
-				panic(err)
-			}
-
-			userInfo.id = res["id"]
-			userInfo.username = res["username"]
 
 			initUser(&userInfo)
 
-			// Create cookie
-			cookie := new(fiber.Cookie)
-			cookie.Name = "authorization"
-			cookie.Value = accessToken
-			cookie.Expires = time.Now().Add(7 * 24 * time.Hour)
-
-			// Cookie value is `userID/refreshToken` encrypted, therefore it can persist through server restarts
-
-			// Set cookie
-			c.Cookie(cookie)
+			store.Set("user", userInfo.RefreshToken)
 
 			return c.Redirect("/restricted")
 		} else {
@@ -120,31 +134,25 @@ func setupAuth() {
 	})
 
 	app.Use(func(c *fiber.Ctx) error {
-		// TODO: Add authorization token verification
-		if c.Cookies("authorization") == "" {
+		store := sessions.Get(c)
+		if store.Get("user") == nil {
 			return c.Redirect("/login")
 		}
 		return c.Next()
 	})
+
+	app.Get("/logout", func(c *fiber.Ctx) error {
+		store := sessions.Get(c)
+		defer store.Save()
+		store.Destroy()
+		return c.Redirect("/")
+	})
 }
 
-// User object
-type User struct {
-	ID                 string `json:"_id,omitempty"`
-	Username           string `json:"title"`
-	AccessToken        string `json:"access.token"`
-	AccessTokenExpires string `json:"access.expires"`
-	RefreshToken       string `json:"refresh_token"`
-}
-
-func _createUser(userInfo *DiscordTokenResponse) {
+func _createUser(userInfo *User) {
 	collection := client.Database("data").Collection("users")
 
-	user := User{
-		ID: userInfo.id,
-	}
-
-	insertResult, err := collection.InsertOne(context.TODO(), user)
+	insertResult, err := collection.InsertOne(context.TODO(), userInfo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -152,20 +160,72 @@ func _createUser(userInfo *DiscordTokenResponse) {
 	fmt.Println("Inserted post with ID:", insertResult.InsertedID)
 }
 
-func initUser(userInfo *DiscordTokenResponse) {
+func initUser(userInfo *User) {
+	resp, err := fetch.R().
+		SetAuthToken(userInfo.AccessToken).
+		Get("https://discord.com/api/v8/users/@me")
+
+	res := DiscordUserResponse{}
+
+	err = json.Unmarshal(resp.Body(), &res)
+	if err != nil {
+		panic(err)
+	}
+
+	userInfo.ID = res.ID
+	userInfo.Username = res.Username
+
 	collection := client.Database("data").Collection("users")
 
 	var user User
 
-	err := collection.FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: userInfo.id}}).Decode(&user)
+	err = collection.FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: userInfo.ID}}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			_createUser(userInfo)
-			return
+		} else {
+			log.Fatal(err)
 		}
-		log.Fatal(err)
 	}
+}
+
+func executeWebhook(destination string, transformations []string) {
+	fmt.Println("here webhook, to", destination)
 	return
+}
+
+func setupUserRoutes() {
+	app.Get("/@me", func(c *fiber.Ctx) error {
+		store := sessions.Get(c)
+		var user User
+		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: store.Get("user")}}).Decode(&user)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return fiber.NewError(fiber.StatusServiceUnavailable, "User not found! Are you registered?")
+			}
+			log.Fatal(err)
+		}
+		return c.SendString(fmt.Sprintf("Welcome to hoopback, %s!", user.Username))
+	})
+	app.Post("/w/:user/:webhook", func(c *fiber.Ctx) error {
+		var user User
+		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: c.Params("user")}}).Decode(&user)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return fiber.NewError(fiber.StatusNotFound, "User not found! Are they registered?")
+			}
+			log.Fatal(err)
+		}
+
+		webhook, ok := user.Webhooks[c.Params("webhook")]
+
+		if ok == false {
+			return fiber.NewError(fiber.StatusNotFound, "Webhook not found!")
+		}
+
+		executeWebhook(webhook.Destination, webhook.Transformations)
+		return c.SendString("Success")
+	})
 }
 
 func setupRoutes() {
@@ -173,11 +233,13 @@ func setupRoutes() {
 		return c.SendString("Welcome to hoopback!")
 	})
 
-	setupAuth()
+	// setupAuth()
 
 	app.Get("/restricted", func(c *fiber.Ctx) error {
 		return c.SendString("restricted area!1!!")
 	})
+
+	setupUserRoutes()
 
 	app.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).SendString("Sorry can't find that!")
@@ -190,12 +252,6 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	setupMiddleware()
-	setupRoutes()
-
-	port := os.Getenv("PORT")
-	app.Listen(":" + port)
-
 	client, err = mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	if err != nil {
 		log.Fatal(err)
@@ -206,6 +262,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Disconnect(ctx)
 	defer cancel()
+	defer client.Disconnect(ctx)
+
+	setupMiddleware()
+	setupRoutes()
+
+	app.Listen(":" + os.Getenv("PORT"))
 }
