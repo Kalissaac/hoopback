@@ -109,7 +109,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 
 			initUser(&userInfo)
 
-			store.Set("user", userInfo.RefreshToken)
+			store.Set("user", userInfo.ID)
 
 			return c.Redirect("/restricted")
 		} else {
