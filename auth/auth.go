@@ -13,7 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/session/v2"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -164,7 +163,7 @@ func initUser(userInfo *User) {
 
 	var user User
 
-	err = collection.FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: userInfo.ID}}).Decode(&user)
+	err = collection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: userInfo.ID}}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			_createUser(userInfo)

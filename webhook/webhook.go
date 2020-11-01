@@ -41,7 +41,7 @@ func Setup(a *fiber.App, c *mongo.Client) {
 
 	app.Post("/w/:user/:webhook", func(c *fiber.Ctx) error {
 		var user auth.User
-		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: c.Params("user")}}).Decode(&user)
+		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: c.Params("user")}}).Decode(&user)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return fiber.NewError(fiber.StatusNotFound, "User not found! Are they registered?")
