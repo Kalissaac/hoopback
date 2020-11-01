@@ -47,6 +47,8 @@ type Webhook struct {
 	Name            string   `bson:"name"`
 	Destination     string   `bson:"destination"`
 	Transformations []string `bson:"transformations"`
+	Type            string   `bson:"type"`
+	Method          string   `bson:"method"`
 }
 
 // User object
