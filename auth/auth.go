@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/session/v2"
@@ -42,20 +44,23 @@ type DiscordUserResponse struct {
 
 // Webhook object
 type Webhook struct {
-	ID              string   `bson:"_id"`
-	Name            string   `bson:"name"`
-	Destination     string   `bson:"destination"`
-	Transformations []string `bson:"transformations"`
-	Type            string   `bson:"type"`
-	Method          string   `bson:"method"`
+	ID              string             `bson:"_id"`
+	Name            string             `bson:"name"`
+	Destination     string             `bson:"destination"`
+	Transformations []string           `bson:"transformations"`
+	Type            string             `bson:"type"`
+	Method          string             `bson:"method"`
+	LastSent        primitive.DateTime `bson:"lastSent"`
+	Status          string             `bson:"status"`
 }
 
 // User object
 type User struct {
 	ID                 string             `bson:"_id,omitempty"`
 	Username           string             `bson:"username"`
+	Avatar             string             `bson:"avatar"`
 	AccessToken        string             `bson:"access_token"`
-	AccessTokenExpires int64              `bson:"access_token_expires"`
+	AccessTokenExpires primitive.DateTime `bson:"access_token_expires"`
 	RefreshToken       string             `bson:"refresh_token"`
 	Webhooks           map[string]Webhook `bson:"webhooks"`
 }
@@ -103,14 +108,14 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 			userInfo := User{
 				AccessToken:        res.AccessToken,
 				RefreshToken:       res.RefreshToken,
-				AccessTokenExpires: time.Now().Unix() + res.ExpiresIn,
+				AccessTokenExpires: primitive.NewDateTimeFromTime(time.Unix(time.Now().Unix()+res.ExpiresIn, 0)),
 			}
 
 			initUser(&userInfo)
 
 			store.Set("user", userInfo.ID)
 
-			return c.Redirect("/restricted")
+			return c.Redirect("/home")
 		} else {
 			// If no auth cookie is found, and it's not a redirect from Discord, send them to login
 			return c.Redirect("https://discord.com/api/oauth2/authorize?client_id=" + url.QueryEscape(os.Getenv("CLIENT_ID")) + "&redirect_uri=" + url.QueryEscape(redirectURI) + "&response_type=code&scope=identify")
@@ -127,7 +132,6 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 
 	app.Get("/logout", func(c *fiber.Ctx) error {
 		store := sessions.Get(c)
-		defer store.Save()
 		store.Destroy()
 		return c.Redirect("/")
 	})
@@ -158,6 +162,7 @@ func initUser(userInfo *User) {
 
 	userInfo.ID = res.ID
 	userInfo.Username = res.Username
+	userInfo.Avatar = res.Avatar
 
 	collection := client.Database("data").Collection("users")
 
@@ -171,4 +176,6 @@ func initUser(userInfo *User) {
 			log.Fatal(err)
 		}
 	}
+
+	// Update user profile info in DB
 }
