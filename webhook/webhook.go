@@ -2,22 +2,26 @@ package webhook
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strings"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"hoopback.schwa.tech/auth"
 
 	"github.com/go-resty/resty/v2"
+
 	"github.com/gofiber/fiber/v2"
+
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"hoopback.schwa.tech/auth"
 )
 
 var (
+	fetch  = resty.New()
 	app    *fiber.App
 	client *mongo.Client
-	fetch  = resty.New()
 )
 
 func executeWebhook(destination string, body map[string]interface{}, transformations []string) {
@@ -31,7 +35,6 @@ func executeWebhook(destination string, body map[string]interface{}, transformat
 	fetch.R().
 		SetBody(transformedBody).
 		Post(destination)
-	fmt.Println("here webhook, to", destination)
 }
 
 // Setup webhook routes and such
@@ -50,10 +53,15 @@ func Setup(a *fiber.App, c *mongo.Client) {
 		}
 
 		webhook, ok := user.Webhooks[c.Params("webhook")]
-
 		if ok == false {
 			return fiber.NewError(fiber.StatusNotFound, "Webhook not found!")
 		}
+
+		webhook.LastSent = primitive.NewDateTimeFromTime(time.Now())
+		user.Webhooks[webhook.ID] = webhook
+
+		update := bson.D{{Key: "$set", Value: bson.D{{Key: "webhooks", Value: user.Webhooks}}}}
+		client.Database("data").Collection("users").UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: user.ID}}, update)
 
 		body := make(map[string]interface{})
 		if err := c.BodyParser(&body); err != nil {
@@ -63,6 +71,9 @@ func Setup(a *fiber.App, c *mongo.Client) {
 		if webhook.Type == "basic" {
 			executeWebhook(webhook.Destination, body, webhook.Transformations)
 		}
-		return c.SendString("Success")
+
+		return c.JSON(&fiber.Map{
+			"success": true,
+		})
 	})
 }
