@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"hoopback.schwa.tech/api"
 	"hoopback.schwa.tech/auth"
 	"hoopback.schwa.tech/user"
 	"hoopback.schwa.tech/webhook"
@@ -17,6 +18,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/helmet/v2"
 	"github.com/gofiber/session/v2"
+	"github.com/gofiber/session/v2/provider/sqlite3"
+	"github.com/gofiber/template/html"
 
 	"github.com/joho/godotenv"
 
@@ -29,13 +32,11 @@ var (
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			return c.Status(500).SendString(err.Error())
 		},
+		Views: html.New("./views", ".html"),
 	})
-	sessions = session.New(session.Config{
-		Expiration: 7 * 24 * time.Hour,
-		Secure:     false, // TODO: change to true for production
-	})
-	client *mongo.Client
-	fetch  = resty.New()
+	sessions *session.Session
+	client   *mongo.Client
+	fetch    = resty.New()
 )
 
 func setupMiddleware() {
@@ -43,21 +44,34 @@ func setupMiddleware() {
 	app.Use(helmet.New())
 	// app.Use(limiter.New())
 	app.Use(recover.New())
+
+	provider, err := sqlite3.New(sqlite3.Config{
+		DBPath:    "test.db.test",
+		TableName: "session",
+	})
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	sessions = session.New(session.Config{
+		Provider: provider,
+	})
 }
 
 func setupRoutes() {
+	app.Static("/", "./static")
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Welcome to hoopback!")
+		return c.SendFile("./static/index.html")
 	})
+
+	webhook.Setup(app, client)
 
 	auth.Setup(app, sessions, client)
 
-	app.Get("/restricted", func(c *fiber.Ctx) error {
-		return c.SendString("restricted area!1!!")
-	})
+	api.Setup(app, sessions, client)
 
 	user.Setup(app, sessions, client)
-	webhook.Setup(app, client)
 
 	app.Use(func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).SendString("Sorry can't find that!")
