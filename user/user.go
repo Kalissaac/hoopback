@@ -58,13 +58,66 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 		}
 
 		return c.Render("home", fiber.Map{
-			"user": user,
+			"title": "Your Webhooks",
+			"user":  user,
 		}) // , "layouts/main"
 	})
 
-	app.Get("/w/:user/:webhook/edit", func(c *fiber.Ctx) error {
-		var user auth.User
-		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: c.Params("user")}}).Decode(&user)
+	app.Get("/activity", func(c *fiber.Ctx) error {
+		store := sessions.Get(c)
+		var user User
+		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return fiber.NewError(fiber.StatusServiceUnavailable, "User not found! Are you registered?")
+			}
+			log.Fatal(err)
+		}
+
+		return c.Render("activity", fiber.Map{
+			"title": "Webhook Activity",
+			"user":  user,
+		}) // , "layouts/main"
+	})
+
+	app.Get("/settings", func(c *fiber.Ctx) error {
+		store := sessions.Get(c)
+		var user User
+		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return fiber.NewError(fiber.StatusServiceUnavailable, "User not found! Are you registered?")
+			}
+			log.Fatal(err)
+		}
+
+		return c.Render("settings", fiber.Map{
+			"title": "User Settings",
+			"user":  user,
+		}) // , "layouts/main"
+	})
+
+	app.Get("/webhooks/new", func(c *fiber.Ctx) error {
+		store := sessions.Get(c)
+		var user User
+		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return fiber.NewError(fiber.StatusServiceUnavailable, "User not found! Are you registered?")
+			}
+			log.Fatal(err)
+		}
+
+		return c.Render("newhook", fiber.Map{
+			"title": "New Webhook",
+			"user":  user,
+		}) // , "layouts/main"
+	})
+
+	app.Get("/webhooks/edit/:webhook", func(c *fiber.Ctx) error {
+		store := sessions.Get(c)
+		var user User
+		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return fiber.NewError(fiber.StatusNotFound, "User not found! Are they registered?")
@@ -77,12 +130,8 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 			return fiber.NewError(fiber.StatusNotFound, "Webhook not found!")
 		}
 
-		store := sessions.Get(c)
-		if store.Get("user") != user.ID {
-			return fiber.NewError(fiber.StatusNotFound, "Webhook not found or user is unauthorized to access this page!")
-		}
-
 		return c.Render("edithook", fiber.Map{
+			"title":   "Edit Webhook",
 			"user":    user,
 			"webhook": webhook,
 		}) // , "layouts/main"

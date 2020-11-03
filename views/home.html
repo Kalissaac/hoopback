@@ -37,7 +37,7 @@
                 <div class="flex items-center">
                   <div class="flex-shrink-0 h-10 w-10">
                     <img class="h-10 w-10 rounded-full"
-                      src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=4&amp;w=256&amp;h=256&amp;q=60"
+                      src="https://favicons.githubusercontent.com/{{getDomain .Destination}}"
                       alt="">
                   </div>
                   <div class="ml-4">
@@ -48,7 +48,7 @@
                 </div>
               </td>
               <td class="px-6 py-4 whitespace-no-wrap">
-                <div class="text-sm leading-5 text-gray-900">{{.Destination}}</div>
+                <div class="text-sm leading-5 text-gray-900">{{trimString .Destination 45}}</div>
               </td>
               <td class="px-6 py-4 whitespace-no-wrap">
                 {{if eq .Status "active"}}
@@ -69,6 +69,27 @@
               <td class="px-6 py-4 whitespace-no-wrap text-right text-sm leading-5 font-medium">
                 <a href="/webhooks/edit/{{.ID}}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
               </td>
+            </tr>
+            {{else}}
+            <tr>
+              <td class="px-6 py-4 whitespace-no-wrap">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 h-10 w-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="text-gray-500" fill="currentColor">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div class="ml-4">
+                    <div class="text-sm leading-5 font-medium text-gray-500">
+                      No Webhooks Found
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-no-wrap" />
+              <td class="px-6 py-4 whitespace-no-wrap" />
+              <td class="px-6 py-4 whitespace-no-wrap" />
+              <td class="px-6 py-4 whitespace-no-wrap" />
             </tr>
             {{end}}
 
