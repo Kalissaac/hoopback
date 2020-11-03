@@ -79,7 +79,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 
 		if store.Get("user") != nil {
 			// Authorization cookie found, user is authenticated
-			return c.Redirect("/restricted")
+			return c.Redirect("/home")
 		} else if c.Query("code") != "" {
 			// Authorization code from Discord found
 
