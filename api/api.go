@@ -10,6 +10,7 @@ import (
 
 	userPack "hoopback.schwa.tech/user"
 
+	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/session/v2"
 
@@ -32,6 +33,28 @@ type webhookRequest struct {
 	Destination     string   `json:"destination" bson:"destination" form:"destination" validate:"required"`
 	Name            string   `json:"name" bson:"name" form:"name" validate:"required"`
 	Transformations []string `json:"transformations" bson:"transformations" form:"transformations" validate:"required,min=1"`
+}
+
+type errorResponse struct {
+	FailedField string
+	Tag         string
+	Value       string
+}
+
+func validateStruct(webhook webhookRequest) []*errorResponse {
+	var errors []*errorResponse
+	validate := validator.New()
+	err := validate.Struct(webhook)
+	if err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			var element errorResponse
+			element.FailedField = err.StructNamespace()
+			element.Tag = err.Tag()
+			element.Value = err.Param()
+			errors = append(errors, &element)
+		}
+	}
+	return errors
 }
 
 // Setup API routes and such
@@ -58,6 +81,11 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"error": "Cannot parse JSON",
 			})
+		}
+
+		errors := validateStruct(body)
+		if errors != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(errors)
 		}
 
 		// Correct array parsing
