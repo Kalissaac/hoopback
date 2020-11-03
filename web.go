@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"regexp"
 	"time"
 
 	"hoopback.schwa.tech/api"
@@ -28,11 +29,20 @@ import (
 )
 
 var (
+	engine = html.New("./views", ".html").AddFunc("getDomain", func(url string) string {
+		return regexp.MustCompile(`([\w]+\.){1}([\w]+\.?)+`).FindString(url)
+	}).AddFunc("trimString", func(str string, length int) string {
+		if len(str) < length {
+			return str
+		}
+		a := []rune(str)
+		return string(a[0:length]) + "..."
+	}) // fix this mess
 	app = fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			return c.Status(500).SendString(err.Error())
 		},
-		Views: html.New("./views", ".html"),
+		Views: engine,
 	})
 	sessions *session.Session
 	client   *mongo.Client
