@@ -91,7 +91,7 @@ func setupRoutes() {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Error loading .env file")
 	}
 
 	client, err = mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGO_URI")))
