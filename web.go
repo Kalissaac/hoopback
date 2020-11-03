@@ -24,6 +24,7 @@ import (
 
 	"github.com/joho/godotenv"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -37,6 +38,8 @@ var (
 		}
 		a := []rune(str)
 		return string(a[0:length]) + "..."
+	}).AddFunc("humanizeDate", func(date primitive.DateTime) string {
+		return "A few minutes ago"
 	}) // fix this mess
 	app = fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
