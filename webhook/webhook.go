@@ -56,6 +56,13 @@ func Setup(a *fiber.App, c *mongo.Client) {
 			return fiber.NewError(fiber.StatusNotFound, "Webhook not found!")
 		}
 
+		switch webhook.Status {
+		case "disabled":
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+				"error": "The specified webhook has been disabled.",
+			})
+		}
+
 		webhook.LastSent = primitive.NewDateTimeFromTime(time.Now())
 		user.Webhooks[webhook.ID] = webhook
 
