@@ -8,9 +8,9 @@
   <div class="md:grid md:grid-cols-3 md:gap-6">
     <div class="md:col-span-1">
       <div class="px-4 sm:px-0">
-        <h3 class="text-lg font-medium leading-6 text-gray-900">Profile</h3>
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Webhook Details</h3>
         <p class="mt-1 text-sm leading-5 text-gray-600">
-          This information will be displayed publicly so be careful what you share.
+          Let's get you started with a new Hoopback workflow.
         </p>
       </div>
     </div>
@@ -21,21 +21,21 @@
             <div class="grid grid-cols-3 gap-6">
               <div class="col-span-3 sm:col-span-2">
                 <label for="destination" class="block text-sm font-medium leading-5 text-gray-700">
-                  Website
+                  Destination Webhook (the webhook you want to send to)
                 </label>
                 <div class="mt-1 flex rounded-md shadow-sm">
-                  <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                  <!-- <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
                     https://
-                  </span>
-                  <input id="destination" name="destination" class="form-input flex-1 block w-full rounded-none rounded-r-md transition duration-150 ease-in-out sm:text-sm sm:leading-5" placeholder="www.example.com" required>
+                  </span> -->
+                  <input id="destination" name="destination" class="form-input flex-1 block w-full rounded-md transition duration-150 ease-in-out sm:text-sm sm:leading-5" placeholder="https://www.example.com/webhook/1234567890" required>
                 </div>
               </div>
             </div>
 
             <div class="mt-6">
               <div class="col-span-6 sm:col-span-3">
-                <label for="name" class="block text-sm font-medium leading-5 text-gray-700">Name</label>
-                <input id="name" name="name" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                <label for="name" class="block text-sm font-medium leading-5 text-gray-700">Name of Webhook</label>
+                <input id="name" name="name" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5" placeholder="My Awesome Webhook">
               </div>
             </div>
 
@@ -44,10 +44,10 @@
                 Transformations
               </label>
               <div class="rounded-md shadow-sm">
-                <textarea id="transformations" name="transformations" required rows="3" class="form-textarea mt-1 block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5" placeholder="you@example.com"></textarea>
+                <textarea id="transformations" name="transformations" required rows="3" class="form-textarea mt-1 block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5" placeholder="mike:bob,gary:john"></textarea>
               </div>
               <p class="mt-2 text-sm text-gray-500">
-                Brief description for your profile. URLs are hyperlinked.
+                While we work on implementing a better system for transformations, here's a quick overview if you want to create your own webhook right now. Each value on the incoming webhook can be mapped to a value on the destination webhook. These fields are separated by a colon with the format <code>[incoming webhook field]:[outgoing webhook field]</code>. For example, if you had a field named <code>name</code> that you wanted to change to <code>author</code>, it would look like <code>name:author</code>. If you have multiple fields to transform, separate them by commas, e.g. <code>name:author,date:timestamp</code>.
               </p>
             </div>
           </div>
