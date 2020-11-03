@@ -6,15 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	"hoopback.schwa.tech/auth"
+	"hoopback.schwa.tech/user"
 
 	"github.com/go-resty/resty/v2"
 
 	"github.com/gofiber/fiber/v2"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -43,7 +42,7 @@ func Setup(a *fiber.App, c *mongo.Client) {
 	client = c
 
 	app.Post("/w/:user/:webhook", func(c *fiber.Ctx) error {
-		var user auth.User
+		var user user.User
 		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: c.Params("user")}}).Decode(&user)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {

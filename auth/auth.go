@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"hoopback.schwa.tech/user"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/go-resty/resty/v2"
@@ -40,29 +42,6 @@ type DiscordUserResponse struct {
 	Username      string `json:"username"`
 	Discriminator string `json:"discriminator"`
 	Avatar        string `json:"avatar"`
-}
-
-// Webhook object
-type Webhook struct {
-	ID              string             `bson:"_id"`
-	Name            string             `bson:"name"`
-	Destination     string             `bson:"destination"`
-	Transformations []string           `bson:"transformations"`
-	Type            string             `bson:"type"`
-	Method          string             `bson:"method"`
-	LastSent        primitive.DateTime `bson:"lastSent"`
-	Status          string             `bson:"status"`
-}
-
-// User object
-type User struct {
-	ID                 string             `bson:"_id,omitempty"`
-	Username           string             `bson:"username"`
-	Avatar             string             `bson:"avatar"`
-	AccessToken        string             `bson:"access_token"`
-	AccessTokenExpires primitive.DateTime `bson:"access_token_expires"`
-	RefreshToken       string             `bson:"refresh_token"`
-	Webhooks           map[string]Webhook `bson:"webhooks"`
 }
 
 // Setup Auth routes and such
@@ -105,7 +84,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 				panic(err)
 			}
 
-			userInfo := User{
+			userInfo := user.User{
 				AccessToken:        res.AccessToken,
 				RefreshToken:       res.RefreshToken,
 				AccessTokenExpires: primitive.NewDateTimeFromTime(time.Unix(time.Now().Unix()+res.ExpiresIn, 0)),
@@ -137,7 +116,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	})
 }
 
-func _createUser(userInfo *User) {
+func _createUser(userInfo *user.User) {
 	collection := client.Database("data").Collection("users")
 
 	insertResult, err := collection.InsertOne(context.TODO(), userInfo)
@@ -148,7 +127,7 @@ func _createUser(userInfo *User) {
 	fmt.Println("Inserted post with ID:", insertResult.InsertedID)
 }
 
-func initUser(userInfo *User) {
+func initUser(userInfo *user.User) {
 	resp, err := fetch.R().
 		SetAuthToken(userInfo.AccessToken).
 		Get("https://discord.com/api/v8/users/@me")
@@ -166,7 +145,7 @@ func initUser(userInfo *User) {
 
 	collection := client.Database("data").Collection("users")
 
-	var user User
+	var user user.User
 
 	err = collection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: userInfo.ID}}).Decode(&user)
 	if err != nil {

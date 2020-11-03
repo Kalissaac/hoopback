@@ -7,8 +7,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/session/v2"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"hoopback.schwa.tech/auth"
 )
 
 var (
@@ -16,6 +16,29 @@ var (
 	sessions *session.Session
 	client   *mongo.Client
 )
+
+// Webhook object
+type Webhook struct {
+	ID              string             `bson:"_id"`
+	Name            string             `bson:"name"`
+	Destination     string             `bson:"destination"`
+	Transformations []string           `bson:"transformations"`
+	Type            string             `bson:"type"`
+	Method          string             `bson:"method"`
+	LastSent        primitive.DateTime `bson:"lastSent"`
+	Status          string             `bson:"status"`
+}
+
+// User object
+type User struct {
+	ID                 string             `bson:"_id,omitempty"`
+	Username           string             `bson:"username"`
+	Avatar             string             `bson:"avatar"`
+	AccessToken        string             `bson:"access_token"`
+	AccessTokenExpires primitive.DateTime `bson:"access_token_expires"`
+	RefreshToken       string             `bson:"refresh_token"`
+	Webhooks           map[string]Webhook `bson:"webhooks"`
+}
 
 // Setup User routes and such
 func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
@@ -25,7 +48,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 
 	app.Get("/home", func(c *fiber.Ctx) error {
 		store := sessions.Get(c)
-		var user auth.User
+		var user User
 		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"hoopback.schwa.tech/auth"
+	userPack "hoopback.schwa.tech/user"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/session/v2"
@@ -43,7 +43,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	app.Post("/api/v1/webhooks/create", func(c *fiber.Ctx) error {
 		store := sessions.Get(c)
 		usersCollection := client.Database("data").Collection("users")
-		var user auth.User
+		var user userPack.User
 		err := usersCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
@@ -73,13 +73,14 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 			id = strings.ToLower(idRaw.String()) + primitive.NewObjectID().Hex()
 		}
 
-		newWebhook := auth.Webhook{
+		newWebhook := userPack.Webhook{
 			Destination:     body.Destination,
 			Name:            body.Name,
 			Transformations: body.Transformations,
 			ID:              id,
 			Type:            "basic",
 			Method:          "post",
+			Status:          "active",
 		}
 		user.Webhooks[newWebhook.ID] = newWebhook
 		update := bson.D{{Key: "$set", Value: bson.D{{Key: "webhooks", Value: user.Webhooks}}}}
