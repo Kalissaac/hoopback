@@ -1,0 +1,17 @@
+{
+  "name": "hoopback",
+  "version": "1.0.0",
+  "description": "",
+  "main": "",
+  "scripts": {
+    "build": "npx tailwindcss build static/css/tailwind.css -o static/css/dashboard.css -c tailwind.config.js",
+    "watch": "watch \"npm run build\" ./views"
+  },
+  "author": "Kalisssaac",
+  "license": "MIT",
+  "dependencies": {
+    "@tailwindcss/ui": "^0.7.2",
+    "tailwindcss": "^1.9.6",
+    "watch": "^1.0.2"
+  }
+}
