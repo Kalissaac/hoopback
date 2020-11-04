@@ -51,20 +51,20 @@
                 <div class="text-sm leading-5 text-gray-900">{{trimString .Destination 45}}</div>
               </td>
               <td class="px-6 py-4 whitespace-no-wrap">
-                {{if eq .Status "active"}}
-                <span
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Active
-                </span>
-                {{else}}
+                {{if eq .Status "disabled"}}
                 <span
                   class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                   Disabled
                 </span>
+                {{else}}
+                <span
+                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                  Active
+                </span>
                 {{end}}
               </td>
-              <td class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500">
-                {{if eq .LastSent 0}}Never{{else}}{{humanizeDate .LastSent}}{{end}}
+              <td class="px-6 py-4 whitespace-no-wrap text-sm leading-5 text-gray-500" name="send-date" id="send-date">
+                {{.LastSent}}
               </td>
               <td class="px-6 py-4 whitespace-no-wrap text-right text-sm leading-5 font-medium">
                 <a href="/webhooks/edit/{{.ID}}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
@@ -92,6 +92,23 @@
               <td class="px-6 py-4 whitespace-no-wrap" />
             </tr>
             {{end}}
+
+            <script src="https://unpkg.com/dayjs@1.8.21/dayjs.min.js"></script>
+            <script src="https://unpkg.com/dayjs@1.8.21/plugin/relativeTime.js"></script>
+            <script>
+              dayjs.extend(window.dayjs_plugin_relativeTime)
+
+              var times = document.getElementsByName("send-date")
+
+              times.forEach(function (e) {
+                if (e.innerText == "0") {
+                  e.innerText = "Never"
+                  return
+                }
+
+                e.innerText = dayjs().to(Number(e.innerText))
+              })
+            </script>
 
             <tr class="cursor-pointer hover:bg-gray-200" onclick="window.location='/webhooks/new';">
               <td class="px-6 py-4 whitespace-no-wrap">
