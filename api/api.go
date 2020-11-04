@@ -33,6 +33,7 @@ type webhookRequest struct {
 	Destination     string   `json:"destination" bson:"destination" form:"destination" validate:"required"`
 	Name            string   `json:"name" bson:"name" form:"name" validate:"required"`
 	Transformations []string `json:"transformations" bson:"transformations" form:"transformations" validate:"required,min=1"`
+	Website         bool     `form:"web"`
 }
 
 type errorResponse struct {
@@ -63,7 +64,11 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	client = c
 	sessions = s
 
-	app.Post("/api/v1/webhooks/create", func(c *fiber.Ctx) error {
+	api := app.Group("/api")
+
+	v1 := api.Group("/v1")
+
+	v1.Post("/webhooks/create", func(c *fiber.Ctx) error {
 		store := sessions.Get(c)
 		usersCollection := client.Database("data").Collection("users")
 		var user userPack.User
@@ -115,9 +120,17 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 
 		usersCollection.UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}, update)
 
+		if body.Website == true {
+			return c.Redirect("/webhooks/success?id=" + newWebhook.ID)
+		}
+
 		return c.JSON(&fiber.Map{
 			"success": true,
 			"webhook": newWebhook,
 		})
+	})
+
+	v1.Post("/webhooks/edit", func(c *fiber.Ctx) error {
+		c.Redirect("/home")
 	})
 }

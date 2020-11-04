@@ -18,17 +18,10 @@
       <form action="/api/v1/webhooks/create" method="POST">
         <div class="shadow sm:rounded-md sm:overflow-hidden">
           <div class="px-4 py-5 bg-white sm:p-6">
-            <div class="grid grid-cols-3 gap-6">
-              <div class="col-span-3 sm:col-span-2">
-                <label for="destination" class="block text-sm font-medium leading-5 text-gray-700">
-                  Destination Webhook (the webhook you want to send to)
-                </label>
-                <div class="mt-1 flex rounded-md shadow-sm">
-                  <!-- <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                    https://
-                  </span> -->
-                  <input id="destination" name="destination" class="form-input flex-1 block w-full rounded-md transition duration-150 ease-in-out sm:text-sm sm:leading-5" placeholder="https://www.example.com/webhook/1234567890" required>
-                </div>
+            <div class="mt-6">
+              <div class="col-span-6 sm:col-span-3">
+                <label for="destination" class="block text-sm font-medium leading-5 text-gray-700">Destination Webhook (the webhook you want to send to)</label>
+                <input type="url" id="destination" name="destination" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5" placeholder="https://example.com/webhooks/1234567890">
               </div>
             </div>
 
@@ -50,6 +43,8 @@
                 While we work on implementing a better system for transformations, here's a quick overview if you want to create your own webhook right now. Each value on the incoming webhook can be mapped to a value on the destination webhook. These fields are separated by a colon with the format <code>[incoming webhook field]:[outgoing webhook field]</code>. For example, if you had a field named <code>name</code> that you wanted to change to <code>author</code>, it would look like <code>name:author</code>. If you have multiple fields to transform, separate them by commas, e.g. <code>name:author,date:timestamp</code>.
               </p>
             </div>
+
+            <input class="hidden" type="checkbox" name="web" id="web" value="true" checked>
           </div>
           <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
             <span class="inline-flex rounded-md shadow-sm">

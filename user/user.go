@@ -114,6 +114,29 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 		}) // , "layouts/main"
 	})
 
+	app.Get("/webhooks/success", func(c *fiber.Ctx) error {
+		store := sessions.Get(c)
+		var user User
+		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
+		if err != nil {
+			if err == mongo.ErrNoDocuments {
+				return fiber.NewError(fiber.StatusServiceUnavailable, "User not found! Are you registered?")
+			}
+			log.Fatal(err)
+		}
+
+		webhook, ok := user.Webhooks[c.Query("id")]
+		if ok == false {
+			return c.Redirect("/home")
+		}
+
+		return c.Render("newhooksuccess", fiber.Map{
+			"title":   "Webhook Creation Success",
+			"user":    user,
+			"webhook": webhook,
+		}) // , "layouts/main"
+	})
+
 	app.Get("/webhooks/edit/:webhook", func(c *fiber.Ctx) error {
 		store := sessions.Get(c)
 		var user User

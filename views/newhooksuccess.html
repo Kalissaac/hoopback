@@ -1,0 +1,54 @@
+{{template "partials/header" .}}
+<!-- Replace with your content -->
+<!--
+  Tailwind UI components require Tailwind CSS v1.8 and the @tailwindcss/ui plugin.
+  Read the documentation to get started: https://tailwindui.com/documentation
+-->
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+  <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+    <h3 class="text-lg leading-6 font-medium text-gray-900">
+      Webhook Information
+    </h3>
+    <p class="mt-1 max-w-2xl text-sm leading-5 text-gray-500">
+      Generated webhook link: <a href="https://hoopback.schwa.tech/w/{{.user.ID}}/{{.webhook.ID}}">https://hoopback.schwa.tech/w/{{.user.ID}}/{{.webhook.ID}}</a>
+    </p>
+  </div>
+  <div>
+    <dl>
+      <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt class="text-sm leading-5 font-medium text-gray-500">
+          Name
+        </dt>
+        <dd class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2">
+          {{.webhook.Name}}
+        </dd>
+      </div>
+      <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt class="text-sm leading-5 font-medium text-gray-500">
+          Webhook Destination
+        </dt>
+        <dd class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2">
+          {{.webhook.Destination}}
+        </dd>
+      </div>
+      <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt class="text-sm leading-5 font-medium text-gray-500">
+          Transformations
+        </dt>
+        <dd class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2">
+          {{.webhook.Transformations}}
+        </dd>
+      </div>
+      <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+        <dt class="text-sm leading-5 font-medium text-gray-500">
+          Generated Webhook Link
+        </dt>
+        <dd class="mt-1 text-sm leading-5 text-gray-900 sm:mt-0 sm:col-span-2">
+          <a href="https://hoopback.schwa.tech/w/{{.user.ID}}/{{.webhook.ID}}">https://hoopback.schwa.tech/w/{{.user.ID}}/{{.webhook.ID}}</a>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>
+<!-- /End replace -->
+{{template "partials/footer" .}}

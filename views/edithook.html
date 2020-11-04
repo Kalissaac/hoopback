@@ -1,7 +1,82 @@
 {{template "partials/header" .}}
 <!-- Replace with your content -->
-<div class="px-4 py-6 sm:px-0">
-  <div class="border-4 border-dashed border-gray-200 rounded-lg h-96"></div>
+<!--
+  Tailwind UI components require Tailwind CSS v1.8 and the @tailwindcss/ui plugin.
+  Read the documentation to get started: https://tailwindui.com/documentation
+-->
+<div>
+  <div class="md:grid md:grid-cols-3 md:gap-6">
+    <div class="md:col-span-1">
+      <div class="px-4 sm:px-0">
+        <h3 class="text-lg font-medium leading-6 text-gray-900">Webhook Details</h3>
+        <p class="mt-1 text-sm leading-5 text-gray-600">
+          Update your webhook details.
+        </p>
+      </div>
+    </div>
+    <div class="mt-5 md:mt-0 md:col-span-2">
+      <form action="/api/v1/webhooks/edit" method="POST">
+        <div class="shadow sm:rounded-md sm:overflow-hidden">
+          <div class="px-4 py-5 bg-white sm:p-6">
+            <div>
+              <div class="col-span-6 sm:col-span-3">
+                <label for="id" class="block text-sm font-medium leading-5 text-gray-700">ID</label>
+                <input readonly id="id" name="id" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 cursor-not-allowed" placeholder="{{.webhook.ID}}">
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <div class="col-span-6 sm:col-span-3">
+                <label for="url" class="block text-sm font-medium leading-5 text-gray-700">Webhook URL</label>
+                <input readonly type="url" id="url" name="url" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 cursor-not-allowed" placeholder="https://hoopback.schwa.tech/w/{{.user.ID}}/{{.webhook.ID}}">
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <div class="col-span-6 sm:col-span-3">
+                <label for="destination" class="block text-sm font-medium leading-5 text-gray-700">Destination Webhook</label>
+                <input type="url" id="destination" name="destination" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5" value="{{.webhook.Destination}}">
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <div class="col-span-6 sm:col-span-3">
+                <label for="name" class="block text-sm font-medium leading-5 text-gray-700">Name</label>
+                <input id="name" name="name" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5" value="{{.webhook.Name}}">
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <label for="transformations" class="block text-sm leading-5 font-medium text-gray-700">
+                Transformations
+              </label>
+              <div class="rounded-md shadow-sm">
+                <textarea id="transformations" name="transformations" required rows="3" class="form-textarea mt-1 block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5" placeholder="{{.webhook.Transformations}}">{{.webhook.Transformations}}</textarea>
+              </div>
+              <p class="mt-2 text-sm text-gray-500">
+                While we work on implementing a better system for transformations, here's a quick overview if you want to create your own webhook right now. Each value on the incoming webhook can be mapped to a value on the destination webhook. These fields are separated by a colon with the format <code>[incoming webhook field]:[outgoing webhook field]</code>. For example, if you had a field named <code>name</code> that you wanted to change to <code>author</code>, it would look like <code>name:author</code>. If you have multiple fields to transform, separate them by commas, e.g. <code>name:author,date:timestamp</code>.
+              </p>
+            </div>
+
+            <div class="mt-6 col-span-6 sm:col-span-3">
+              <label for="status" class="block text-sm font-medium leading-5 text-gray-700">Status</label>
+              <select id="status" class="mt-1 block form-select w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                <option>Active</option>
+                <option>Unavailable</option>
+              </select>
+            </div>
+          </div>
+          <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+            <span class="inline-flex rounded-md shadow-sm">
+              <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent text-sm leading-5 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo active:bg-indigo-700 transition duration-150 ease-in-out">
+                Save
+              </button>
+            </span>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 <!-- /End replace -->
 {{template "partials/footer" .}}
