@@ -77,7 +77,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 			if err == mongo.ErrNoDocuments {
 				return fiber.NewError(fiber.StatusNotFound, "User not found! Are they registered?")
 			}
-			log.Fatal(err)
+			log.Println(err)
 		}
 
 		var body webhookRequest
@@ -130,7 +130,72 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 		})
 	})
 
-	v1.Post("/webhooks/edit", func(c *fiber.Ctx) error {
-		c.Redirect("/home")
+	v1.Post("/webhooks/edit", editWebhook)
+	v1.Patch("/webhooks/edit/:id", editWebhook)
+
+	v1.Get("/webhooks/delete", deleteWebhook)
+	v1.Delete("/webhooks/delete/:id", deleteWebhook)
+}
+
+func editWebhook(c *fiber.Ctx) error {
+	var id string
+	if c.Params("id") != "" {
+		id = c.Params("id")
+	} else if c.Query("id") != "" {
+		id = c.Query("id")
+	} else {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "No webhook ID found!",
+		})
+	}
+
+	log.Println(id)
+
+	return c.Redirect("/home")
+}
+
+func deleteWebhook(c *fiber.Ctx) error {
+	var id string
+	if c.Params("id") != "" {
+		id = c.Params("id")
+	} else if c.Query("id") != "" {
+		id = c.Query("id")
+	} else {
+		log.Println(id)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "A webhook was not given in the request!",
+		})
+	}
+
+	store := sessions.Get(c)
+	usersCollection := client.Database("data").Collection("users")
+	var user userPack.User
+	err := usersCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return fiber.NewError(fiber.StatusNotFound, "User not found! Are they registered?")
+		}
+		log.Println(err)
+	}
+
+	_, ok := user.Webhooks[id]
+	if ok == false {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "No webhook found with that ID!",
+		})
+	}
+
+	delete(user.Webhooks, id)
+
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "webhooks", Value: user.Webhooks}}}}
+
+	usersCollection.UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}, update)
+
+	if c.Query("web") == "true" {
+		return c.Redirect("/home")
+	}
+
+	return c.JSON(&fiber.Map{
+		"success": true,
 	})
 }

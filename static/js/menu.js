@@ -1,16 +1,5 @@
-var open = false
-
-var profileElement = document.getElementById('profile')
 document.getElementById("user-menu").addEventListener('click', function () {
-  if (open == false) {
-    profileElement.classList.remove("opacity-0")
-    profileElement.classList.add("opacity-100")
-    open = true
-  } else {
-    profileElement.classList.remove("opacity-100")
-    profileElement.classList.add("opacity-0")
-    open = false
-  }
+  profile.open = !profile.open
 });
 
 var openMobile = false
@@ -40,3 +29,16 @@ document.getElementById("user-menu-mobile-toggle").addEventListener('click', fun
     openMobile = false
   }
 });
+
+document.getElementById("sign-out").addEventListener('click', function () {
+  document.getElementById("parent-overlay").classList.remove("pointer-events-none")
+  overlay.open = true
+  modal.open = true
+  profile.open = false
+})
+
+document.getElementById("sign-out-cancel").addEventListener('click', function () {
+  document.getElementById("parent-overlay").classList.add("pointer-events-none")
+  overlay.open = false
+  modal.open = false
+})
