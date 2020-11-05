@@ -42,7 +42,7 @@ type errorResponse struct {
 	Value       string
 }
 
-func validateStruct(webhook webhookRequest) []*errorResponse {
+func validateStruct(webhook interface{}) []*errorResponse {
 	var errors []*errorResponse
 	validate := validator.New()
 	err := validate.Struct(webhook)
@@ -131,27 +131,68 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	})
 
 	v1.Post("/webhooks/edit", editWebhook)
-	v1.Patch("/webhooks/edit/:id", editWebhook)
+	v1.Patch("/webhooks/edit", editWebhook)
 
 	v1.Get("/webhooks/delete", deleteWebhook)
 	v1.Delete("/webhooks/delete/:id", deleteWebhook)
 }
 
+type webhookEditRequest struct {
+	ID              string   `json:"id" bson:"_id" form:"id" validate:"required"`
+	Destination     string   `json:"destination" bson:"destination" form:"destination" validate:"required,url"`
+	Name            string   `json:"name" bson:"name" form:"name" validate:"required"`
+	Transformations []string `json:"transformations" bson:"transformations" form:"transformations" validate:"required,min=1"`
+	Status          string   `json:"status" bson:"status" form:"status" validate:"required,oneof=active unavailable"`
+	Website         bool     `form:"web"`
+}
+
 func editWebhook(c *fiber.Ctx) error {
-	var id string
-	if c.Params("id") != "" {
-		id = c.Params("id")
-	} else if c.Query("id") != "" {
-		id = c.Query("id")
-	} else {
+	store := sessions.Get(c)
+	usersCollection := client.Database("data").Collection("users")
+	var user userPack.User
+	err := usersCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return fiber.NewError(fiber.StatusNotFound, "User not found! Are they registered?")
+		}
+		log.Println(err)
+	}
+
+	var body webhookEditRequest
+	if err := c.BodyParser(&body); err != nil {
+		fmt.Println(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "No webhook ID found!",
+			"error": "Cannot parse JSON",
 		})
 	}
 
-	log.Println(id)
+	errors := validateStruct(body)
+	if errors != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errors)
+	}
 
-	return c.Redirect("/home")
+	updatedWebhook := userPack.Webhook{
+		Destination:     body.Destination,
+		Name:            body.Name,
+		Transformations: body.Transformations,
+		ID:              body.ID,
+		Type:            "basic",
+		Method:          "post",
+		Status:          body.Status,
+	}
+	user.Webhooks[updatedWebhook.ID] = updatedWebhook
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "webhooks", Value: user.Webhooks}}}}
+
+	usersCollection.UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}, update)
+
+	if body.Website == true {
+		return c.Redirect("/webhooks/edit/" + updatedWebhook.ID)
+	}
+
+	return c.JSON(&fiber.Map{
+		"success": true,
+		"webhook": updatedWebhook,
+	})
 }
 
 func deleteWebhook(c *fiber.Ctx) error {

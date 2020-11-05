@@ -21,14 +21,14 @@
             <div>
               <div class="col-span-6 sm:col-span-3">
                 <label for="id" class="block text-sm font-medium leading-5 text-gray-700">ID</label>
-                <input readonly id="id" name="id" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 cursor-not-allowed" placeholder="{{.webhook.ID}}">
+                <input readonly id="id" name="id" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 cursor-not-allowed" value="{{.webhook.ID}}">
               </div>
             </div>
 
             <div class="mt-6">
               <div class="col-span-6 sm:col-span-3">
                 <label for="url" class="block text-sm font-medium leading-5 text-gray-700">Webhook URL</label>
-                <input readonly type="url" id="url" name="url" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 cursor-not-allowed" placeholder="https://hoopback.schwa.tech/w/{{.user.ID}}/{{.webhook.ID}}">
+                <input readonly type="url" id="url" name="url" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 cursor-not-allowed" value="https://hoopback.schwa.tech/w/{{.user.ID}}/{{.webhook.ID}}">
               </div>
             </div>
 
@@ -60,11 +60,13 @@
 
             <div class="mt-6 col-span-6 sm:col-span-3">
               <label for="status" class="block text-sm font-medium leading-5 text-gray-700">Status</label>
-              <select id="status" class="mt-1 block form-select w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5">
-                <option>Active</option>
-                <option>Disabled</option>
+              <select id="status" name="status" class="mt-1 block form-select w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:shadow-outline-blue focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm sm:leading-5">
+                <option selected value="active">Active</option>
+                <option value="disabled">Disabled</option>
               </select>
             </div>
+
+            <input class="hidden" type="checkbox" name="web" id="web" value="true" checked>
           </div>
           <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
             <span class="inline-flex rounded-md shadow-sm">
@@ -88,10 +90,10 @@
       </div>
     </div>
     <div class="mt-5 md:mt-0 md:col-span-2">
-      <form action="/api/v1/webhooks/delete" method="GET">
+      <form action="/api/v1/webhooks/delete" method="POST">
         <div class="shadow overflow-hidden sm:rounded-md">
           <div class="px-4 py-5 bg-white sm:p-6">
-            <input readonly id="id" name="id" required class="mt-1 form-input block w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 cursor-not-allowed hidden" value="{{.webhook.ID}}">
+            <input readonly id="id" name="id" required class="mt-1 form-input w-full transition duration-150 ease-in-out sm:text-sm sm:leading-5 cursor-not-allowed hidden" value="{{.webhook.ID}}">
             <fieldset>
               <legend class="text-base leading-6 font-medium text-gray-900">Delete Webhook</legend>
               <p class="text-sm leading-5 text-gray-500">This will permanantly delete your webhook! You cannot come back from this.</p>
