@@ -15,7 +15,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/session/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -23,7 +23,7 @@ import (
 var (
 	fetch    = resty.New()
 	app      *fiber.App
-	sessions *session.Session
+	sessions *session.Store
 	client   *mongo.Client
 )
 
@@ -45,7 +45,7 @@ type DiscordUserResponse struct {
 }
 
 // Setup Auth routes and such
-func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
+func Setup(a *fiber.App, s *session.Store, c *mongo.Client) {
 	app = a
 	sessions = s
 	client = c
@@ -53,7 +53,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	app.Get("/login", func(c *fiber.Ctx) error {
 		redirectURI := c.BaseURL() + "/login"
 
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		defer store.Save()
 
 		if store.Get("user") != nil {
@@ -102,7 +102,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	})
 
 	app.Use(func(c *fiber.Ctx) error {
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		if store.Get("user") == nil {
 			return c.Redirect("/login")
 		}
@@ -110,7 +110,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	})
 
 	app.Get("/logout", func(c *fiber.Ctx) error {
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		store.Destroy()
 		return c.Redirect("/")
 	})

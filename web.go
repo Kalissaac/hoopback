@@ -17,9 +17,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/gofiber/helmet/v2"
-	"github.com/gofiber/session/v2"
-	"github.com/gofiber/session/v2/provider/sqlite3"
+	"github.com/gofiber/storage/mongodb"
 	"github.com/gofiber/template/html"
 
 	"github.com/joho/godotenv"
@@ -44,7 +44,7 @@ var (
 		},
 		Views: engine,
 	})
-	sessions *session.Session
+	sessions *session.Store
 	client   *mongo.Client
 	fetch    = resty.New()
 )
@@ -55,17 +55,16 @@ func setupMiddleware() {
 	// app.Use(limiter.New())
 	app.Use(recover.New())
 
-	provider, err := sqlite3.New(sqlite3.Config{
-		DBPath:    "test.db.test",
-		TableName: "session",
-	})
-
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
 	sessions = session.New(session.Config{
-		Provider: provider,
+		Storage: mongodb.New(mongodb.Config{
+			Atlas:      true,
+			Host:       os.Getenv("MONGO_HOST"),
+			Username:   os.Getenv("MONGO_USER"),
+			Password:   os.Getenv("MONGO_PASSWORD"),
+			Database:   "data",
+			Collection: "fiber_storage",
+			Reset:      false,
+		}),
 	})
 }
 

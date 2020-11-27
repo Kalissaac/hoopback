@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/session/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 
 	"github.com/oklog/ulid/v2"
 
@@ -23,7 +23,7 @@ import (
 
 var (
 	app      *fiber.App
-	sessions *session.Session
+	sessions *session.Store
 	client   *mongo.Client
 	t        = time.Now()
 	entropy  = ulid.Monotonic(rand.New(rand.NewSource(t.UnixNano())), 0)
@@ -59,7 +59,7 @@ func validateStruct(webhook interface{}) []*errorResponse {
 }
 
 // Setup API routes and such
-func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
+func Setup(a *fiber.App, s *session.Store, c *mongo.Client) {
 	app = a
 	client = c
 	sessions = s
@@ -69,7 +69,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	v1 := api.Group("/v1")
 
 	v1.Post("/webhooks/create", func(c *fiber.Ctx) error {
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		usersCollection := client.Database("data").Collection("users")
 		var user userPack.User
 		err := usersCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
@@ -133,8 +133,8 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	v1.Post("/webhooks/edit", editWebhook)
 	v1.Patch("/webhooks/edit", editWebhook)
 
-	v1.Get("/webhooks/delete", deleteWebhook)
-	v1.Delete("/webhooks/delete/:id", deleteWebhook)
+	v1.Post("/webhooks/delete", deleteWebhook)
+	v1.Delete("/webhooks/delete", deleteWebhook)
 }
 
 type webhookEditRequest struct {
@@ -147,7 +147,7 @@ type webhookEditRequest struct {
 }
 
 func editWebhook(c *fiber.Ctx) error {
-	store := sessions.Get(c)
+	store, _ := sessions.Get(c)
 	usersCollection := client.Database("data").Collection("users")
 	var user userPack.User
 	err := usersCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
@@ -196,19 +196,21 @@ func editWebhook(c *fiber.Ctx) error {
 }
 
 func deleteWebhook(c *fiber.Ctx) error {
-	var id string
-	if c.Params("id") != "" {
-		id = c.Params("id")
-	} else if c.Query("id") != "" {
-		id = c.Query("id")
-	} else {
-		log.Println(id)
+	body := make(map[string]interface{})
+	if err := c.BodyParser(&body); err != nil {
+		log.Println(err)
+		return err
+	}
+
+	if body["id"] == nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "A webhook was not given in the request!",
 		})
 	}
 
-	store := sessions.Get(c)
+	id := body["id"].(string)
+
+	store, _ := sessions.Get(c)
 	usersCollection := client.Database("data").Collection("users")
 	var user userPack.User
 	err := usersCollection.FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
@@ -232,7 +234,7 @@ func deleteWebhook(c *fiber.Ctx) error {
 
 	usersCollection.UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}, update)
 
-	if c.Query("web") == "true" {
+	if body["web"].(string) == "true" {
 		return c.Redirect("/home")
 	}
 

@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/session/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,7 +13,7 @@ import (
 
 var (
 	app      *fiber.App
-	sessions *session.Session
+	sessions *session.Store
 	client   *mongo.Client
 )
 
@@ -41,13 +41,13 @@ type User struct {
 }
 
 // Setup User routes and such
-func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
+func Setup(a *fiber.App, s *session.Store, cl *mongo.Client) {
 	app = a
 	sessions = s
-	client = c
+	client = cl
 
 	app.Get("/home", func(c *fiber.Ctx) error {
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		var user User
 		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
 		if err != nil {
@@ -64,7 +64,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	})
 
 	app.Get("/activity", func(c *fiber.Ctx) error {
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		var user User
 		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
 		if err != nil {
@@ -81,7 +81,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	})
 
 	app.Get("/settings", func(c *fiber.Ctx) error {
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		var user User
 		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
 		if err != nil {
@@ -98,7 +98,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	})
 
 	app.Get("/webhooks/new", func(c *fiber.Ctx) error {
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		var user User
 		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
 		if err != nil {
@@ -115,7 +115,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	})
 
 	app.Get("/webhooks/success", func(c *fiber.Ctx) error {
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		var user User
 		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
 		if err != nil {
@@ -138,7 +138,7 @@ func Setup(a *fiber.App, s *session.Session, c *mongo.Client) {
 	})
 
 	app.Get("/webhooks/edit/:webhook", func(c *fiber.Ctx) error {
-		store := sessions.Get(c)
+		store, _ := sessions.Get(c)
 		var user User
 		err := client.Database("data").Collection("users").FindOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}).Decode(&user)
 		if err != nil {
