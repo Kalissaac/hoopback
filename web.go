@@ -56,6 +56,7 @@ func setupMiddleware() {
 	app.Use(recover.New())
 
 	sessions = session.New(session.Config{
+		Expiration: 7 * 24 * time.Hour,
 		Storage: mongodb.New(mongodb.Config{
 			Atlas:      true,
 			Host:       os.Getenv("MONGO_HOST"),
