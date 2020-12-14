@@ -58,13 +58,10 @@ func setupMiddleware() {
 	sessions = session.New(session.Config{
 		Expiration: 7 * 24 * time.Hour,
 		Storage: mongodb.New(mongodb.Config{
-			Atlas:      true,
-			Host:       os.Getenv("MONGO_HOST"),
-			Username:   os.Getenv("MONGO_USER"),
-			Password:   os.Getenv("MONGO_PASSWORD"),
-			Database:   "data",
-			Collection: "fiber_storage",
-			Reset:      false,
+			ConnectionURI: os.Getenv("MONGO_URI"),
+			Database:      "data",
+			Collection:    "fiber_storage",
+			Reset:         false,
 		}),
 	})
 }
