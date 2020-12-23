@@ -27,7 +27,7 @@ var (
 	client   *mongo.Client
 )
 
-// DiscordTokenResponse represents the OAuth token recieved from Discord
+// DiscordTokenResponse represents the OAuth token received from Discord
 type DiscordTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
@@ -36,7 +36,7 @@ type DiscordTokenResponse struct {
 	Scope        string `json:"scope"`
 }
 
-// DiscordUserResponse represents the user object recieved from Discord
+// DiscordUserResponse represents the user object received from Discord
 type DiscordUserResponse struct {
 	ID            string `json:"id"`
 	Username      string `json:"username"`
