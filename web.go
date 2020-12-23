@@ -64,6 +64,7 @@ func setupMiddleware() {
 			Reset:         false,
 		}),
 	})
+	sessions.RegisterType("")
 }
 
 func setupRoutes() {
