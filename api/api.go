@@ -195,20 +195,25 @@ func editWebhook(c *fiber.Ctx) error {
 	})
 }
 
+type webhookDeleteRequest struct {
+	ID      string `json:"id" bson:"_id" form:"id" validate:"required"`
+	Website bool   `form:"web"`
+}
+
 func deleteWebhook(c *fiber.Ctx) error {
-	body := make(map[string]interface{})
+	var body webhookDeleteRequest
 	if err := c.BodyParser(&body); err != nil {
 		log.Println(err)
 		return err
 	}
 
-	if body["id"] == nil {
+	if body.ID == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "A webhook was not given in the request!",
 		})
 	}
 
-	id := body["id"].(string)
+	id := body.ID
 
 	store, _ := sessions.Get(c)
 	usersCollection := client.Database("data").Collection("users")
@@ -234,7 +239,7 @@ func deleteWebhook(c *fiber.Ctx) error {
 
 	usersCollection.UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}, update)
 
-	if body["web"].(string) == "true" {
+	if body.Website == true {
 		return c.Redirect("/home")
 	}
 
