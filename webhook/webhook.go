@@ -52,7 +52,7 @@ func Setup(a *fiber.App, c *mongo.Client) {
 		}
 
 		webhook, ok := user.Webhooks[c.Params("webhook")]
-		if ok == false {
+		if !ok {
 			return fiber.NewError(fiber.StatusNotFound, "Webhook not found!")
 		}
 

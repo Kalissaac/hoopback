@@ -126,7 +126,7 @@ func Setup(a *fiber.App, s *session.Store, cl *mongo.Client) {
 		}
 
 		webhook, ok := user.Webhooks[c.Query("id")]
-		if ok == false {
+		if !ok {
 			return c.Redirect("/home")
 		}
 
@@ -149,7 +149,7 @@ func Setup(a *fiber.App, s *session.Store, cl *mongo.Client) {
 		}
 
 		webhook, ok := user.Webhooks[c.Params("webhook")]
-		if ok == false {
+		if !ok {
 			return fiber.NewError(fiber.StatusNotFound, "Webhook not found!")
 		}
 

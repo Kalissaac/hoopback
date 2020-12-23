@@ -120,7 +120,7 @@ func Setup(a *fiber.App, s *session.Store, c *mongo.Client) {
 
 		usersCollection.UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}, update)
 
-		if body.Website == true {
+		if body.Website {
 			return c.Redirect("/webhooks/success?id=" + newWebhook.ID)
 		}
 
@@ -185,7 +185,7 @@ func editWebhook(c *fiber.Ctx) error {
 
 	usersCollection.UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}, update)
 
-	if body.Website == true {
+	if body.Website {
 		return c.Redirect("/webhooks/edit/" + updatedWebhook.ID)
 	}
 
@@ -227,7 +227,7 @@ func deleteWebhook(c *fiber.Ctx) error {
 	}
 
 	_, ok := user.Webhooks[id]
-	if ok == false {
+	if !ok {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "No webhook found with that ID!",
 		})
@@ -239,7 +239,7 @@ func deleteWebhook(c *fiber.Ctx) error {
 
 	usersCollection.UpdateOne(context.TODO(), bson.D{{Key: "_id", Value: store.Get("user")}}, update)
 
-	if body.Website == true {
+	if body.Website {
 		return c.Redirect("/home")
 	}
 
