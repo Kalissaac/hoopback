@@ -103,10 +103,9 @@
               times.forEach(function (e) {
                 if (e.innerText == "0") {
                   e.innerText = "Never"
-                  return
+                } else {
+                  e.innerText = dayjs().to(Number(e.innerText))
                 }
-
-                e.innerText = dayjs().to(Number(e.innerText))
               })
             </script>
 
