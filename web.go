@@ -108,5 +108,5 @@ func main() {
 	setupMiddleware()
 	setupRoutes()
 
-	app.Listen(":" + os.Getenv("PORT"))
+	app.Listen("localhost:" + os.Getenv("PORT"))
 }
