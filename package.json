@@ -4,7 +4,7 @@
   "description": "",
   "main": "",
   "scripts": {
-    "build": "npx tailwindcss build static/css/tailwind.css -o static/css/dashboard.css -c tailwind.config.js",
+    "build": "NODE_ENV=production npx tailwindcss build static/css/tailwind.css -o static/css/dashboard.css -c tailwind.config.js",
     "watch": "watch \"npm run build\" ./views"
   },
   "author": "Kalisssaac",
