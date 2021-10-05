@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"runtime"
 	"time"
 
 	"hoopback.schwa.tech/api"
@@ -108,5 +109,9 @@ func main() {
 	setupMiddleware()
 	setupRoutes()
 
-	app.Listen("localhost:" + os.Getenv("PORT"))
+	if runtime.GOOS == "darwin" {
+		app.Listen("localhost:" + os.Getenv("PORT"))
+	} else {
+		app.Listen(":" + os.Getenv("PORT"))
+	}
 }
